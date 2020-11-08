@@ -9,66 +9,82 @@ package mysocketapp;
  *
  * @author Moustafa Mohamed
  */
-
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Server {
+
     private Socket socket;
     private ServerSocket server;
     private DataInputStream in, input;
     private DataOutputStream out;
-    private String line;
-    
-    public Server(int port){
-        try{
-            
+    private String line = "";
+    private Thread acceptThread;
+//    private ArrayList<Client> clients;
+
+    public Server(int port) {
+        try {
+//            clients = new ArrayList();
             server = new ServerSocket(port);
             System.out.println("Server Started and waiting for a client ...");
-            
             socket = server.accept();
-            
             System.out.println("Clinet Accepted");
             
-            
+            acceptThread = new Thread(() -> {
+                while (true) {
+
+                    try {
+                        System.out.println("accepting");
+                        socket = server.accept();
+                        System.out.println("Clinet Accepted");
+                    } catch (IOException ex) {
+                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+                }
+            });
+            acceptThread.start();
             in = new DataInputStream(socket.getInputStream());
             input = new DataInputStream(System.in);
-            
+
             out = new DataOutputStream(socket.getOutputStream());
-            
-            line = "";
-            
-            while(!line.equalsIgnoreCase("Break")){
-                
-                    new Thread(()->{
-                       try{
-                            line = in.readUTF();
-                            System.out.println("Client: " + line);
-                        }catch(IOException io){
-                            System.out.println(io);
-                        }
-                    }).start();
-                    
-                    new Thread(()->{
-                        try{
-                            line = input.readLine();
-                            out.writeUTF(line);
-                        }catch(IOException io){
-                            System.out.println(io);
-                        }
-                    }).start();
+
+            while (!line.equalsIgnoreCase("Break")) {
+
+                try {
+                    line = in.readUTF();
+                    if (line != null) {
+                        out.writeUTF(line);
+                    }
+
+                    System.out.println(line);
+                } catch (IOException io) {
+                    System.out.println(io);
+                }
+
             }
             System.out.println("Closing Connection...");
-            
+
             socket.close();
             in.close();
             input.close();
             out.close();
-            
+
             System.out.println("Connection Closed!");
-        }catch(IOException io){
+        } catch (IOException io) {
             System.out.println(io);
         }
-        
+
     }
+
+//   public void subscribe(Client client){
+//       clients.add(client);
+//   }
+//   
+//   public boolean unsubscribe(Client client){
+//       return clients.remove(client);
+//   }
 }
